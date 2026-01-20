@@ -13,7 +13,7 @@ from starlette.exceptions import HTTPException
 
 from backend.database.session import get_db
 from backend.models import User
-from backend.redis_dir.redis_config import redis_client
+from backend.redis_dir.redis_config import get_redis
 
 load_dotenv()
 
@@ -40,8 +40,9 @@ async def create_refresh_token(login: str):
         "type": "refresh_token",
         "exp": expire
     }
+    r = get_redis()
     refresh_token = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
-    await redis_client.setex(f"refresh:{jti}", timedelta(days=30), login)
+    await r.setex(f"refresh:{jti}", timedelta(days=30), login)
     return refresh_token
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login")
