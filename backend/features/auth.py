@@ -13,7 +13,7 @@ from starlette.exceptions import HTTPException
 
 from backend.database.session import get_db
 from backend.models import User
-from backend.redis.redis_config import redis_client
+from backend.redis_dir.redis_config import redis_client
 
 load_dotenv()
 

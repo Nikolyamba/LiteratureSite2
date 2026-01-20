@@ -8,11 +8,11 @@ from starlette.concurrency import run_in_threadpool
 
 from backend.database.session import get_db
 from backend.features.auth import create_access_token, create_refresh_token
-from backend.features.hash_pass import hashed_password
+from backend.features.hash_pass import hash_password
 from backend.models import User
 from backend.models.user import UserRole
 
-u_router = APIRouter(prefix='users')
+u_router = APIRouter(prefix='/users')
 
 class UserRegister(BaseModel):
     login: str
@@ -29,19 +29,19 @@ async def register(data: UserRegister, db: AsyncSession = Depends(get_db)) -> di
         raise HTTPException(status_code=409, detail='Такой логин или email уже используются на сайте')
 
     password_hash = await run_in_threadpool(
-        hashed_password,
+        hash_password,
         data.password
     )
 
     new_user = User(login = data.login,
-                    password = password_hash,
+                    hashed_password = password_hash,
                     email = data.email,
                     role = UserRole.user.value,
                     info = data.info)
 
-    async with db.begin():
-        db.add(new_user)
-        # TODO: ДОДЕЛАТЬ
+    db.add(new_user)
+    await db.commit()
+    await db.refresh(new_user)
 
     access_token = create_access_token(new_user.login)
     refresh_token = await create_refresh_token(new_user.login)

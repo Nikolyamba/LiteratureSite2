@@ -2,7 +2,7 @@ import uvicorn
 from fastapi import FastAPI
 
 from backend.api.user import u_router
-from backend.redis.redis_config import init_redis, close_redis
+from backend.redis_dir.redis_config import init_redis, close_redis
 
 app = FastAPI()
 
