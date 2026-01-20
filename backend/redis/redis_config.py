@@ -1,10 +1,17 @@
 import os
 
-import redis
 from dotenv import load_dotenv
+from redis.asyncio import Redis
 
 load_dotenv()
 
-redis_url = os.getenv("REDIS_URL")
+redis_client: Redis | None = None
 
-redis_client = redis.Redis.from_url(redis_url, decode_responses=True)
+async def init_redis():
+    global redis_client
+    redis_client = Redis.from_url(url = os.getenv("REDIS_URL"),
+        decode_responses=True)
+
+async def close_redis():
+    if redis_client:
+        await redis_client.close()

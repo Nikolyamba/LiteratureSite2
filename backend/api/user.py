@@ -2,8 +2,9 @@ from typing import Optional, Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
-from sqlalchemy import text, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from starlette.concurrency import run_in_threadpool
 
 from backend.database.session import get_db
 from backend.features.auth import create_access_token, create_refresh_token
@@ -27,8 +28,13 @@ async def register(data: UserRegister, db: AsyncSession = Depends(get_db)) -> di
     if old_user:
         raise HTTPException(status_code=409, detail='Такой логин или email уже используются на сайте')
 
+    password_hash = await run_in_threadpool(
+        hashed_password,
+        data.password
+    )
+
     new_user = User(login = data.login,
-                    password = hashed_password(data.password),
+                    password = password_hash,
                     email = data.email,
                     role = UserRole.user.value,
                     info = data.info)
@@ -38,7 +44,7 @@ async def register(data: UserRegister, db: AsyncSession = Depends(get_db)) -> di
         # TODO: ДОДЕЛАТЬ
 
     access_token = create_access_token(new_user.login)
-    refresh_token = create_refresh_token(new_user.login)
+    refresh_token = await create_refresh_token(new_user.login)
 
     return {'access_token': access_token, 'refresh_token': refresh_token}
 
