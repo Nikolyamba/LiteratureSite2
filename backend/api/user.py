@@ -1,4 +1,4 @@
-from typing import Optional, Annotated
+from typing import Optional, Annotated, List
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
@@ -18,6 +18,7 @@ class UserRegister(BaseModel):
     login: str
     password: Annotated[str, Field(min_length=8, max_length=128)]
     email: str
+    image: Optional[str | None] = None
     info: Optional[str | None] = None
 
 @u_router.post('')
@@ -37,6 +38,7 @@ async def register(data: UserRegister, db: AsyncSession = Depends(get_db)) -> di
                     hashed_password = password_hash,
                     email = data.email,
                     role = UserRole.user.value,
+                    image = data.image,
                     info = data.info)
 
     db.add(new_user)
@@ -45,8 +47,22 @@ async def register(data: UserRegister, db: AsyncSession = Depends(get_db)) -> di
 
     access_token = create_access_token(new_user.login)
     refresh_token = await create_refresh_token(new_user.login)
+    #FIXME А ЕСЛИ УДАЛИТЬ ПОЛЬЗОВАТЕЛЯ!!!!
 
     return {'access_token': access_token, 'refresh_token': refresh_token}
+
+class GetAllUsers(BaseModel):
+    login: str
+    image: Optional[str | None] = None
+    class Config:
+        orm_mode = True
+
+@u_router.get('', response_model=List[GetAllUsers])
+async def get_all_users(db: AsyncSession = Depends(get_db)):
+    q = select(User)
+    result = await db.execute(q)
+    users = result.scalars().all()
+    return users
 
 
 

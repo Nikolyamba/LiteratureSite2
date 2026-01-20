@@ -17,6 +17,8 @@ class User(Base):
     login: Mapped[str] = mapped_column(unique=True)
     hashed_password: Mapped[str] = mapped_column(nullable=False)
     email: Mapped[str] = mapped_column(unique=True)
+    image: Mapped[str] = mapped_column(nullable=True)
+
     role: Mapped[UserRole] = mapped_column(
         Enum(
             UserRole,
