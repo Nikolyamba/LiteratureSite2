@@ -1,24 +1,25 @@
 import uuid
 from enum import Enum as PyEnum
+from typing import List
 
 from sqlalchemy import UUID, Enum
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from backend.database.base import Base
 
 class UserRole(PyEnum):
     user: str = "User"
     admin: str = "Admin" #ВРУЧНУЮ ЗАТЕМ НАДО РАСШИРЯТЬ ЭНАМ
+    author: str = "Author"
 
 class User(Base):
-    __tablename__ = "__users__"
+    __tablename__ = "users"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     login: Mapped[str] = mapped_column(unique=True)
     hashed_password: Mapped[str] = mapped_column(nullable=False)
     email: Mapped[str] = mapped_column(unique=True)
     image: Mapped[str] = mapped_column(nullable=True)
-
     role: Mapped[UserRole] = mapped_column(
         Enum(
             UserRole,
@@ -30,4 +31,6 @@ class User(Base):
         nullable=False
     )
     info:  Mapped[str] = mapped_column(nullable=True)
+
+    books: Mapped[List["Book"]] = relationship(back_populates='author')
 
