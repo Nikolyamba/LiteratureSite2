@@ -73,7 +73,7 @@ async def logout(refresh_token: str, current_user: User = Depends(get_current_us
     payload = decode_token(refresh_token)
     jti_id = payload.get('jti')
     r = get_redis()
-    await r.delete(f'refresh{jti_id}')
+    await r.delete(f'refresh:{jti_id}')
 
     return {'success': True, 'msg': f'{current_user.login} вышел из системы'}
 
@@ -81,15 +81,20 @@ async def logout(refresh_token: str, current_user: User = Depends(get_current_us
 async def get_new_access_token(refresh_token: str) -> dict:
     payload = decode_token(refresh_token)
 
+    if payload.get("type") != "refresh_token":
+        raise HTTPException(401, "Неверный тип токена")
+
     jti = payload.get("jti")
     r = get_redis()
     if not r.exists(f"refresh:{jti}"):
         raise HTTPException(status_code=401, detail="Refresh токен недействителен")
 
-    login = r.get("sub")
+    login = await r.get(f"refresh:{jti}")
+    await r.delete(f"refresh:{jti}")
 
     new_access_token = create_access_token(login)
-    return {"success": True, "access_token": new_access_token}
+    new_refresh_token = create_refresh_token(login)
+    return {"success": True, "payload": {'access_token': new_access_token, 'refresh_token': new_refresh_token}}
 
 class GetAllUsers(BaseModel):
     login: str
