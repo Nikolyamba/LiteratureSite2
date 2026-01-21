@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.concurrency import run_in_threadpool
 
 from backend.database.session import get_db
-from backend.features.admin_func import can_delete_user
+from backend.features.admin_func import can_edit_user
 from backend.features.auth import create_access_token, create_refresh_token, get_current_user, decode_token
 from backend.features.hash_pass import hash_password, verify_password
 from backend.models import User
@@ -109,6 +109,22 @@ async def get_all_users(db: AsyncSession = Depends(get_db)):
     users = result.scalars().all()
     return users
 
+class UserInfo(BaseModel):
+    login: str
+    image: Optional[str | None] = None
+    info: Optional[str | None] = None
+    class Config:
+        orm_mode = True
+
+@u_router.get('/{user_id}', response_model=UserInfo)
+async def get_user(user_id: uuid.UUID, db: AsyncSession = Depends(get_db),
+                   current_user: User = Depends(get_current_user)):
+    q = select(User).where(User.id == user_id)
+    result = await db.execute(q)
+    target_user = result.scalar_one_or_none()
+
+    return target_user
+
 @u_router.delete('/{user_id}')
 async def del_user(user_id: uuid.UUID, db: AsyncSession = Depends(get_db),
                    current_user: User = Depends(get_current_user)) -> dict:
@@ -119,12 +135,42 @@ async def del_user(user_id: uuid.UUID, db: AsyncSession = Depends(get_db),
     if not user:
         raise HTTPException(status_code=404, detail='Пользователь не найден')
 
-    if not can_delete_user(current_user, user):
+    if not can_edit_user(current_user, user):
         raise HTTPException(status_code=403, detail='У вас нет прав доступа')
 
     await db.delete(user)
     await db.commit()
 
     return {'status': 'deleted'}
+
+class EditUserData(BaseModel):
+    login: Optional[str | None] = None
+    image: Optional[str | None] = None
+    info: Optional[str | None] = None
+#FIXME сделать пароль
+
+@u_router.patch('/{user_id}', response_model=UserInfo)
+async def edit_user(user_id: uuid.UUID, data: EditUserData,
+                    db: AsyncSession = Depends(get_db),
+                    current_user: User = Depends(get_current_user)):
+    q = select(User).where(User.id == user_id)
+    result = await db.execute(q)
+    target_user = result.scalar_one_or_none()
+
+    if not target_user:
+        raise HTTPException(status_code=404, detail='Пользователь не найден')
+
+    if not can_edit_user(current_user, target_user):
+        raise HTTPException(status_code=403, detail='У вас нет прав доступа')
+
+    update_data = data.model_dump(exclude_unset=True)
+
+    for row, info in update_data.items():
+        setattr(target_user, row, info)
+
+    await db.commit()
+    await db.refresh(target_user)
+
+
 
 
