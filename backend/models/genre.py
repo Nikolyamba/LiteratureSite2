@@ -11,6 +11,7 @@ class Genre(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     genre_name: Mapped[str] = mapped_column(unique=True, index=True)
+    image: Mapped[str] = mapped_column(nullable=True)
     description: Mapped[str] = mapped_column(nullable=True)
 
     books: Mapped[List['Book']] = relationship(secondary='book_genres', back_populates='genres')

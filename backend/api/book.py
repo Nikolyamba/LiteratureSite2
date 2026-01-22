@@ -3,8 +3,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from select import select
-from sqlalchemy import and_
+from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.database.session import get_db
@@ -113,8 +112,8 @@ async def edit_book(book_id: uuid.UUID, data: EditBookData, db: AsyncSession = D
         raise HTTPException(status_code=403, detail='У вас нет прав доступа')
 
     update_data = data.model_dump(exclude_unset=True)
-    for key, value in update_data.items():
-        setattr(book, key, value)
+    for row, info in update_data.items():
+        setattr(book, row, info)
 
     await db.commit()
     await db.refresh(book)
