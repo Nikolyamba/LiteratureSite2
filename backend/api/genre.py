@@ -1,11 +1,12 @@
 import uuid
-from typing import Optional
+from typing import Optional, List
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.api.book import GetBooks
 from backend.database.session import get_db
 from backend.features.admin_func import can_edit_genre
 from backend.features.auth import get_current_user
@@ -42,16 +43,32 @@ async def create_genre(data: GenreGeneralModel, current_user: User = Depends(get
 class GetGenres(BaseModel):
     genre_name: str
     image: Optional[str | None] = None
+    class Config:
+        orm_mode = True
+
 
 @g_router.get('', response_model=GetGenres)
 async def get_all_genres(db: AsyncSession = Depends(get_db)):
     q = select(Genre)
     result = await db.execute(q)
-    genres = result.scalars()
+    genres = result.scalars().all()
 
     return genres
 
-# @g_router.get('/{genre_id}')
+@g_router.get('/{genre_id}', response_model=List[GetBooks])
+async def get_genre_books(genre_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(text("""
+    SELECT title, image FROM books as b
+    JOIN book_genres as bg on b.id = bg.book_id
+    JOIN genres as g on bg.genre_id = :genre_id
+    WHERE g.id = :genre_id
+    ORDER BY b.title ASC
+    LIMIT 10 OFFSET :offset
+    """), {'genre_id': genre_id})
+    books = result.fetchall()
+
+    return books
+
 
 @g_router.delete('/{genre_id}')
 async def delete_genre(genre_id: uuid.UUID, db: AsyncSession = Depends(get_db),
@@ -74,6 +91,8 @@ class EditGenre(BaseModel):
     genre_name: Optional[str | None] = None
     image: Optional[str, None] = None
     description: Optional[str, None] = None
+    class Config:
+        orm_mode = True
 
 @g_router.patch('/{genre_id}', response_model=GenreGeneralModel)
 async def edit_genre(data: EditGenre, genre_id: uuid.UUID,

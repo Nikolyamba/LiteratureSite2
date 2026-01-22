@@ -53,12 +53,14 @@ async def new_book(data: GeneralModelBook, current_user: User = Depends(get_curr
 class GetBooks(BaseModel):
     title: str
     image: Optional[str | None] = None
+    class Config:
+        orm_mode = True
 
 @b_router.get('', response_model=GetBooks)
 async def get_all_books(db: AsyncSession = Depends(get_db)):
     q = select(Book)
     result = await db.execute(q)
-    books = result.scalars()
+    books = result.scalars().all()
 
     return books
 
