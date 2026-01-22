@@ -1,9 +1,22 @@
 import uuid
+from typing import List
 
 from sqlalchemy import UUID, Text, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from backend.database.base import Base
+
+class BookGenre(Base):
+    __tablename__ = "book_genres"
+
+    book_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("books.id", ondelete="CASCADE"),
+        primary_key=True
+    )
+    genre_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("genres.id", ondelete="CASCADE"),
+        primary_key=True
+    )
 
 class Book(Base):
     __tablename__ = 'books'
@@ -16,4 +29,5 @@ class Book(Base):
     year_of_publication: Mapped[int] = mapped_column(nullable=True)
 
     author: Mapped['User'] = relationship(back_populates='books')
+    genres: Mapped[List['Genre']] = relationship(secondary='book_genres', back_populates='books')
 
