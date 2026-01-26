@@ -28,6 +28,10 @@ class Book(Base):
     image: Mapped[str] = mapped_column(nullable=True)
     year_of_publication: Mapped[int] = mapped_column(nullable=True)
 
-    author: Mapped['User'] = relationship(back_populates='books')
+    author: Mapped['User'] = relationship(
+        back_populates='books',
+        foreign_keys=[author_id]
+    )
     genres: Mapped[List['Genre']] = relationship(secondary='book_genres', back_populates='books')
+    comments: Mapped[List['Comment']] = relationship(back_populates='book')
 

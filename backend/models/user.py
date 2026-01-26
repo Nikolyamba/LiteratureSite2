@@ -33,4 +33,5 @@ class User(Base):
     info:  Mapped[str] = mapped_column(nullable=True)
 
     books: Mapped[List["Book"]] = relationship(back_populates='author')
+    comments: Mapped[List["Comment"]] = relationship(back_populates='user')
 
