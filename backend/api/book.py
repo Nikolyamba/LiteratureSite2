@@ -11,14 +11,14 @@ from backend.features.admin_func import can_edit_book
 from backend.features.auth import get_current_user
 from backend.models import User, Book
 
-b_router = APIRouter(prefix = 'books')
+b_router = APIRouter(prefix = '/books')
 
 class GeneralModelBook(BaseModel):
     author_id: uuid.UUID
     title: str
-    description: Optional[str | None] = None
-    image: Optional[str | None] = None
-    year_of_publication: Optional[int | None] = None
+    description: Optional[str] = None
+    image: Optional[str] = None
+    year_of_publication: Optional[int] = None
 
 @b_router.post('', response_model=GeneralModelBook)
 async def new_book(data: GeneralModelBook, current_user: User = Depends(get_current_user),
@@ -38,11 +38,11 @@ async def new_book(data: GeneralModelBook, current_user: User = Depends(get_curr
     if old_book:
         raise HTTPException(status_code=409, detail='Такая книга уже есть на сайте!')
 
-    new_book = Book(author_id = data.author_id,
-                    title = data.title,
-                    description = data.description,
-                    image = data.image,
-                    year_of_publication = data.year_of_publication)
+    new_book = Book(author_id=data.author_id,
+                    title=data.title,
+                    description=data.description,
+                    image=data.image,
+                    year_of_publication=data.year_of_publication)
 
     db.add(new_book)
     await db.commit()
@@ -52,9 +52,9 @@ async def new_book(data: GeneralModelBook, current_user: User = Depends(get_curr
 
 class GetBooks(BaseModel):
     title: str
-    image: Optional[str | None] = None
+    image: Optional[str] = None
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 @b_router.get('', response_model=GetBooks)
 async def get_all_books(db: AsyncSession = Depends(get_db)):
@@ -94,11 +94,13 @@ async def del_book(book_id: uuid.UUID, db: AsyncSession = Depends(get_db),
     return {'success': True, 'msg': 'Книга успешно удалена'}
 
 class EditBookData(BaseModel):
-    author_id: Optional[uuid.UUID | None] = None
-    title: Optional[str | None] = None
-    description: Optional[str | None] = None
-    image: Optional[str | None] = None
-    year_of_publication: Optional[int | None] = None
+    author_id: Optional[uuid.UUID] = None
+    title: Optional[str] = None
+    description: Optional[str] = None
+    image: Optional[str] = None
+    year_of_publication: Optional[int] = None
+    class Config:
+        from_attributes = True
 
 @b_router.patch('/{book_id}', response_model=GeneralModelBook)
 async def edit_book(book_id: uuid.UUID, data: EditBookData, db: AsyncSession = Depends(get_db),

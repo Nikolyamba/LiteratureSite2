@@ -12,12 +12,12 @@ from backend.features.admin_func import can_edit_genre
 from backend.features.auth import get_current_user
 from backend.models import User, Genre
 
-g_router = APIRouter(prefix='genres')
+g_router = APIRouter(prefix='/genres')
 
 class GenreGeneralModel(BaseModel):
     genre_name: str
-    image: Optional[str | None] = None
-    description: Optional[str | None] = None
+    image: Optional[str] = None
+    description: Optional[str] = None
 
 @g_router.post('', response_model=GenreGeneralModel)
 async def create_genre(data: GenreGeneralModel, current_user: User = Depends(get_current_user),
@@ -42,9 +42,9 @@ async def create_genre(data: GenreGeneralModel, current_user: User = Depends(get
 
 class GetGenres(BaseModel):
     genre_name: str
-    image: Optional[str | None] = None
+    image: Optional[str] = None
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 @g_router.get('', response_model=GetGenres)
@@ -88,11 +88,11 @@ async def delete_genre(genre_id: uuid.UUID, db: AsyncSession = Depends(get_db),
     return {'success': True, 'msg': 'Жанр успешно удалён'}
 
 class EditGenre(BaseModel):
-    genre_name: Optional[str | None] = None
-    image: Optional[str, None] = None
-    description: Optional[str, None] = None
+    genre_name: Optional[str] = None
+    image: Optional[str] = None
+    description: Optional[str] = None
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 @g_router.patch('/{genre_id}', response_model=GenreGeneralModel)
 async def edit_genre(data: EditGenre, genre_id: uuid.UUID,

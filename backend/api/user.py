@@ -21,8 +21,9 @@ class UserRegister(BaseModel):
     login: str
     password: Annotated[str, Field(min_length=8, max_length=128)]
     email: str
-    image: Optional[str | None] = None
-    info: Optional[str | None] = None
+    role: Optional[UserRole] = UserRole.user #небезопасно, но сделано это в качестве удобства)
+    image: Optional[str] = None
+    info: Optional[str] = None
 
 @u_router.post('')
 async def register(data: UserRegister, db: AsyncSession = Depends(get_db)) -> dict:
@@ -32,6 +33,7 @@ async def register(data: UserRegister, db: AsyncSession = Depends(get_db)) -> di
     if old_user:
         raise HTTPException(status_code=409, detail='Такой логин или email уже используются на сайте')
 
+    #FIXME: сделать в будущем проверку на соответствие пароля цифрам и буковам
     password_hash = await run_in_threadpool(
         hash_password,
         data.password
@@ -40,7 +42,7 @@ async def register(data: UserRegister, db: AsyncSession = Depends(get_db)) -> di
     new_user = User(login = data.login,
                     hashed_password = password_hash,
                     email = data.email,
-                    role = UserRole.user,
+                    role = data.role,
                     image = data.image,
                     info = data.info)
 
@@ -98,9 +100,9 @@ async def get_new_access_token(refresh_token: str) -> dict:
 
 class GetAllUsers(BaseModel):
     login: str
-    image: Optional[str | None] = None
+    image: Optional[str] = None
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 @u_router.get('', response_model=List[GetAllUsers])
 async def get_all_users(db: AsyncSession = Depends(get_db)):
@@ -111,10 +113,10 @@ async def get_all_users(db: AsyncSession = Depends(get_db)):
 
 class UserInfo(BaseModel):
     login: str
-    image: Optional[str | None] = None
-    info: Optional[str | None] = None
+    image: Optional[str] = None
+    info: Optional[str] = None
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 @u_router.get('/{user_id}', response_model=UserInfo)
 async def get_user(user_id: uuid.UUID, db: AsyncSession = Depends(get_db),
@@ -144,9 +146,11 @@ async def del_user(user_id: uuid.UUID, db: AsyncSession = Depends(get_db),
     return {'status': 'deleted'}
 
 class EditUserData(BaseModel):
-    login: Optional[str | None] = None
-    image: Optional[str | None] = None
-    info: Optional[str | None] = None
+    login: Optional[str] = None
+    image: Optional[str] = None
+    info: Optional[str] = None
+    class Config:
+        from_attributes=True
 #FIXME сделать пароль
 
 @u_router.patch('/{user_id}', response_model=UserInfo)

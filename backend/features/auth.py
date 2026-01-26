@@ -15,6 +15,8 @@ from backend.database.session import get_db
 from backend.models import User
 from backend.redis_dir.redis_config import get_redis
 
+#FIXME: ЧУТКА В КОНЦЕ НАДО ОТРЕФАКТОРИТЬ
+
 load_dotenv()
 
 SECRET_KEY = os.getenv("KEY")
