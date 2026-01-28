@@ -10,7 +10,6 @@ from backend.database.base import Base
 class UserRole(PyEnum):
     user: str = "User"
     admin: str = "Admin" #ВРУЧНУЮ ЗАТЕМ НАДО РАСШИРЯТЬ ЭНАМ
-    author: str = "Author"
 
 class User(Base):
     __tablename__ = "users"
@@ -32,6 +31,5 @@ class User(Base):
     )
     info:  Mapped[str] = mapped_column(nullable=True)
 
-    books: Mapped[List["Book"]] = relationship(back_populates='author')
     comments: Mapped[List["Comment"]] = relationship(back_populates='user')
 

@@ -8,7 +8,7 @@ from backend.models.user import UserRole
 
 DATABASE_URL = "sqlite+aiosqlite:///./test.db"
 
-test_engine = create_async_engine(DATABASE_URL, echo=True, future=True)
+test_engine = create_async_engine(DATABASE_URL, echo=False, future=True)
 
 TestingSessionLocal = async_sessionmaker(
     test_engine,
@@ -28,14 +28,9 @@ async def prepare_database():
     async with test_engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
 
-class FakeUser:
-    id: uuid.UUID = '123ABC'
-    login: str = 'Hype'
-    hashed_password: str = '1234qwer'
-    email: str = '1'
-    image: None
-    role: UserRole.user
-    info: None
+# class FakeUser:
+#     def __init__(self):
+
 
 class FakeAdmin:
     id: uuid.UUID = '231BDC'

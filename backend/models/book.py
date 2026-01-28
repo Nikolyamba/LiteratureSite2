@@ -22,16 +22,13 @@ class Book(Base):
     __tablename__ = 'books'
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    author_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
+    author_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("authors.id", ondelete="CASCADE"))
     title: Mapped[str] = mapped_column(nullable=False)
     description: Mapped[str] = mapped_column(Text(500), nullable=True)
     image: Mapped[str] = mapped_column(nullable=True)
     year_of_publication: Mapped[int] = mapped_column(nullable=True)
 
-    author: Mapped['User'] = relationship(
-        back_populates='books',
-        foreign_keys=[author_id]
-    )
+    author: Mapped['Author'] = relationship(back_populates='books')
     genres: Mapped[List['Genre']] = relationship(secondary='book_genres', back_populates='books')
     comments: Mapped[List['Comment']] = relationship(back_populates='book')
 
