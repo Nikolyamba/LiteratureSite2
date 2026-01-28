@@ -13,7 +13,7 @@ from backend.features.admin_func import isAdmin
 from backend.features.auth import get_current_user
 from backend.models import User, Author
 
-a_router = APIRouter(prefix='authors')
+a_router = APIRouter(prefix='/authors')
 
 class RequestAuthor(BaseModel):
     name: str

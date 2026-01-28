@@ -18,6 +18,10 @@ app.include_router(a_router, prefix='/api')
 async def startup():
     await init_redis()
 
+@app.get('/healthcheck')
+async def healthcheck():
+    return {'success': True}
+
 @app.on_event('shutdown')
 async def shutdown():
     await close_redis()
