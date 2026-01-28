@@ -64,6 +64,8 @@ async def get_all_books(db: AsyncSession = Depends(get_db)):
 
     return books
 
+#FIXME: ДОДЕЛАТЬ ПРАВИЛЬНЫЙ ГЕТ И ПАТЧ КНИГ И ДЕЛЕТЕ КАСКАДНОЕ
+
 @b_router.get('/{book_id}', response_model=GeneralModelBook)
 async def get_book(book_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
     q = select(Book).where(Book.id == book_id)

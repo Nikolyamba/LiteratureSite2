@@ -30,5 +30,4 @@ class Book(Base):
 
     author: Mapped['Author'] = relationship(back_populates='books')
     genres: Mapped[List['Genre']] = relationship(secondary='book_genres', back_populates='books')
-    comments: Mapped[List['Comment']] = relationship(back_populates='book')
 

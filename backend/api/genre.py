@@ -8,7 +8,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.api.book import GetBooks
 from backend.database.session import get_db
-from backend.features.admin_func import can_edit_genre
+from backend.features.admin_func import isAdmin
+
 from backend.features.auth import get_current_user
 from backend.models import User, Genre
 
@@ -22,7 +23,7 @@ class GenreGeneralModel(BaseModel):
 @g_router.post('', response_model=GenreGeneralModel)
 async def create_genre(data: GenreGeneralModel, current_user: User = Depends(get_current_user),
                        db: AsyncSession = Depends(get_db)):
-    if not can_edit_genre(current_user):
+    if not isAdmin(current_user):
         raise HTTPException(status_code=403, detail='У вас нет прав доступа')
 
     q = select(Genre).where(Genre.genre_name == data.genre_name)
@@ -79,7 +80,7 @@ async def delete_genre(genre_id: uuid.UUID, db: AsyncSession = Depends(get_db),
     if not genre:
         raise HTTPException(status_code=404, detail='Такой жанр не найден')
 
-    if not can_edit_genre(current_user):
+    if not isAdmin(current_user):
         raise HTTPException(status_code=403, detail='У вас нет прав доступа')
 
     await db.delete(genre)
@@ -104,7 +105,7 @@ async def edit_genre(data: EditGenre, genre_id: uuid.UUID,
     if not genre:
         raise HTTPException(status_code=404, detail='Такой жанр не найден')
 
-    if not can_edit_genre(current_user):
+    if not isAdmin(current_user):
         raise HTTPException(status_code=403, detail='У вас нет прав доступа')
 
     update_data = data.model_dump(exclude_unset=True)

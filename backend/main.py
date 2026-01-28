@@ -1,6 +1,7 @@
 import uvicorn
 from fastapi import FastAPI
 
+from backend.api.author import a_router
 from backend.api.book import b_router
 from backend.api.genre import g_router
 from backend.api.user import u_router
@@ -11,6 +12,7 @@ app = FastAPI()
 app.include_router(u_router, prefix='/api')
 app.include_router(b_router, prefix='/api')
 app.include_router(g_router, prefix='/api')
+app.include_router(a_router, prefix='/api')
 
 @app.on_event('startup')
 async def startup():
