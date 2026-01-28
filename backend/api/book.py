@@ -7,7 +7,7 @@ from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.database.session import get_db
-from backend.features.admin_func import can_edit_book
+from backend.features.admin_func import isAdmin
 from backend.features.auth import get_current_user
 from backend.models import User, Book
 
@@ -23,7 +23,7 @@ class GeneralModelBook(BaseModel):
 @b_router.post('', response_model=GeneralModelBook)
 async def new_book(data: GeneralModelBook, current_user: User = Depends(get_current_user),
                    db: AsyncSession = Depends(get_db)):
-    if not can_edit_book(current_user):
+    if not isAdmin(current_user):
         raise HTTPException(status_code=403, detail='У вас нет прав доступа')
 
     q = select(Book).where(
@@ -85,7 +85,7 @@ async def del_book(book_id: uuid.UUID, db: AsyncSession = Depends(get_db),
     if not book:
         raise HTTPException(status_code=404, detail='Такая книга не найдена!')
 
-    if not can_edit_book(current_user):
+    if not isAdmin(current_user):
         raise HTTPException(status_code=403, detail='У вас нет прав доступа')
 
     await db.delete(book)
@@ -112,7 +112,7 @@ async def edit_book(book_id: uuid.UUID, data: EditBookData, db: AsyncSession = D
     if not book:
         raise HTTPException(status_code=404, detail='Такая книга не найдена!')
 
-    if not can_edit_book(current_user):
+    if not isAdmin(current_user):
         raise HTTPException(status_code=403, detail='У вас нет прав доступа')
 
     update_data = data.model_dump(exclude_unset=True)

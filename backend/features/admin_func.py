@@ -8,10 +8,7 @@ def can_edit_user(current_user: User, target_user: User) -> bool:
         return True
     return False
 
-def can_edit_book(current_user: User) -> bool:
-    if current_user.role == UserRole.admin or current_user.role == UserRole.author:
+def isAdmin(current_user: User) -> bool:
+    if current_user.role == UserRole.admin:
         return True
     return False
-
-def can_edit_genre(current_user: User) -> bool:
-    return current_user.role == UserRole.admin
