@@ -19,6 +19,8 @@ class GenreGeneralModel(BaseModel):
     genre_name: str
     image: Optional[str] = None
     description: Optional[str] = None
+    class Config:
+        from_attributes = True
 
 @g_router.post('', response_model=GenreGeneralModel)
 async def create_genre(data: GenreGeneralModel, current_user: User = Depends(get_current_user),
@@ -48,7 +50,7 @@ class GetGenres(BaseModel):
         from_attributes = True
 
 
-@g_router.get('', response_model=GetGenres)
+@g_router.get('', response_model=List[GetGenres])
 async def get_all_genres(db: AsyncSession = Depends(get_db)):
     q = select(Genre)
     result = await db.execute(q)

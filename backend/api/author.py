@@ -22,13 +22,10 @@ class RequestAuthor(BaseModel):
     birthday: Optional[datetime] = None
     about: Optional[str] = None
 
-class ResponseAuthor(BaseModel):
+class ResponseAuthor(RequestAuthor):
     id: uuid.UUID
-    name: str
-    surname: str
-    patronimyc: Optional[str] = None
-    birthday: Optional[datetime] = None
-    about: Optional[str] = None
+    class Config:
+        from_attributes=True
 
 @a_router.post('', response_model=ResponseAuthor)
 async def create_author(data: RequestAuthor, current_user: User = Depends(get_current_user),
@@ -45,9 +42,6 @@ async def create_author(data: RequestAuthor, current_user: User = Depends(get_cu
     if old_author:
         raise HTTPException(status_code=401, detail='Такой автор уже есть')
 
-    if data.birthday:
-        data.birthday = data.birthday.strftime("%d-%m-%Y")
-
     new_author = Author(name = data.name,
                         surname = data.surname,
                         patronimyc = data.patronimyc,
@@ -58,7 +52,7 @@ async def create_author(data: RequestAuthor, current_user: User = Depends(get_cu
     await db.commit()
     await db.refresh(new_author)
 
-    return ResponseAuthor
+    return new_author
 
 class GetAuthors(BaseModel):
     id: uuid.UUID
