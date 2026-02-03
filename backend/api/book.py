@@ -1,27 +1,30 @@
 import uuid
-from typing import Optional
+from typing import Optional, List
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
+from backend.api.genre import GetGenres
 from backend.database.session import get_db
 from backend.features.rights import isAdmin
 from backend.features.auth import get_current_user
-from backend.models import User, Book
+from backend.models import User, Book, Genre
 
 b_router = APIRouter(prefix = '/books')
 
-class GeneralModelBook(BaseModel):
+class RegisterBook(BaseModel):
     author_id: uuid.UUID
     title: str
     description: Optional[str] = None
     image: Optional[str] = None
     year_of_publication: Optional[int] = None
+    genre_ids: List[uuid.UUID] = []
 
-@b_router.post('', response_model=GeneralModelBook)
-async def new_book(data: GeneralModelBook, current_user: User = Depends(get_current_user),
+@b_router.post('', response_model=RegisterBook)
+async def new_book(data: RegisterBook, current_user: User = Depends(get_current_user),
                    db: AsyncSession = Depends(get_db)):
     if not isAdmin(current_user):
         raise HTTPException(status_code=403, detail='У вас нет прав доступа')
@@ -44,6 +47,15 @@ async def new_book(data: GeneralModelBook, current_user: User = Depends(get_curr
                     image=data.image,
                     year_of_publication=data.year_of_publication)
 
+    if data.genre_ids:
+        q_genre = select(Genre).where(Genre.id.in_(data.genre_ids))
+        result_genre = await db.execute(q_genre)
+        genres = result_genre.scalars().all()
+        if len(genres) != len(set(data.genres)):
+            raise HTTPException(status_code=400, detail="Некоторые жанры не найдены")
+
+        new_book.genres = genres
+
     db.add(new_book)
     await db.commit()
     await db.refresh(new_book)
@@ -64,11 +76,24 @@ async def get_all_books(db: AsyncSession = Depends(get_db)):
 
     return books
 
-#FIXME: ДОДЕЛАТЬ ПРАВИЛЬНЫЙ ГЕТ И ПАТЧ КНИГ И ДЕЛЕТЕ КАСКАДНОЕ
+class ResponseBook(BaseModel):
+    author_id: uuid.UUID
+    title: str
+    description: Optional[str] = None
+    image: Optional[str] = None
+    year_of_publication: Optional[int] = None
+    genres: List[GetGenres]
+    class Config:
+        from_attributes=True
 
-@b_router.get('/{book_id}', response_model=GeneralModelBook)
+
+@b_router.get('/{book_id}', response_model=ResponseBook)
 async def get_book(book_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
-    q = select(Book).where(Book.id == book_id)
+    q = (
+        select(Book)
+        .where(Book.id == book_id)
+        .options(selectinload(Book.genres))
+    )
     result = await db.execute(q)
     book = result.scalar_one_or_none()
 
@@ -101,13 +126,14 @@ class EditBookData(BaseModel):
     description: Optional[str] = None
     image: Optional[str] = None
     year_of_publication: Optional[int] = None
+    genre_ids: Optional[List[uuid.UUID]] = None
     class Config:
         from_attributes = True
 
-@b_router.patch('/{book_id}', response_model=GeneralModelBook)
+@b_router.patch('/{book_id}', response_model=RegisterBook)
 async def edit_book(book_id: uuid.UUID, data: EditBookData, db: AsyncSession = Depends(get_db),
                    current_user: User = Depends(get_current_user)):
-    q = select(Book).where(Book.id == book_id)
+    q = select(Book).where(Book.id == book_id).options(selectinload(Book.genres))
     result = await db.execute(q)
     book = result.scalar_one_or_none()
 
@@ -119,7 +145,25 @@ async def edit_book(book_id: uuid.UUID, data: EditBookData, db: AsyncSession = D
 
     update_data = data.model_dump(exclude_unset=True)
     for row, info in update_data.items():
-        setattr(book, row, info)
+        if row != 'genre_ids':
+            setattr(book, row, info)
+
+    if 'genre_ids' in update_data:
+        genre_ids = update_data.get('genre_ids')
+
+        if genre_ids is not None:
+            genre_ids = list(set(genre_ids))
+
+            genres_q = select(Genre).where(Genre.id.in_(genre_ids))
+            genres = (await db.execute(genres_q)).scalars().all()
+
+            if len(genres) != len(genre_ids):
+                raise HTTPException(
+                    status_code=400,
+                    detail="Некоторые жанры не найдены"
+                )
+
+            book.genres = genres
 
     await db.commit()
     await db.refresh(book)
