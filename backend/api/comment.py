@@ -12,22 +12,9 @@ from backend.database.session import get_db
 from backend.features.auth import get_current_user
 from backend.features.rights import isAdmin, can_edit_comment
 from backend.models import User, Comment
+from backend.schemas.comment import ResponseComment, RequestComment
 
 c_router = APIRouter(prefix='/comments')
-
-
-class RequestComment(BaseModel):
-    text: str
-    target_id: uuid.UUID
-    target_type: str
-
-
-class ResponseComment(RequestComment):
-    user_id: uuid.UUID
-    created_at: datetime
-
-    class Config:
-        from_attributes = True
 
 
 @c_router.post('', response_model=ResponseComment)

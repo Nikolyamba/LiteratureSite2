@@ -1,9 +1,7 @@
 import uuid
-from datetime import datetime
-from typing import Optional, List
+from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
 from sqlalchemy import and_, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -12,23 +10,9 @@ from backend.database.session import get_db
 from backend.features.rights import isAdmin
 from backend.features.auth import get_current_user
 from backend.models import User, Author
+from backend.schemas.author import ResponseAuthor, GetAuthors, EditAuthor, RequestAuthor
 
 a_router = APIRouter(prefix='/authors')
-
-
-class RequestAuthor(BaseModel):
-    name: str
-    surname: str
-    patronimyc: Optional[str] = None
-    birthday: Optional[datetime] = None
-    about: Optional[str] = None
-
-
-class ResponseAuthor(RequestAuthor):
-    id: uuid.UUID
-
-    class Config:
-        from_attributes = True
 
 
 @a_router.post('', response_model=ResponseAuthor)
@@ -57,15 +41,6 @@ async def create_author(data: RequestAuthor, current_user: User = Depends(get_cu
     await db.refresh(new_author)
 
     return new_author
-
-
-class GetAuthors(BaseModel):
-    id: uuid.UUID
-    name: str
-    surname: str
-
-    class Config:
-        from_attributes = True
 
 
 @a_router.get('', response_model=List[GetAuthors])
@@ -107,14 +82,6 @@ async def delete_author(author_id: uuid.UUID, db: AsyncSession = Depends(get_db)
     await db.commit()
 
     return {'success': True, 'msg': f'{author_id} успешно удалён'}
-
-
-class EditAuthor(BaseModel):
-    name: Optional[str] = None
-    surname: Optional[str] = None
-    patronimyc: Optional[str] = None
-    birthday: Optional[datetime] = None
-    about: Optional[str] = None
 
 
 @a_router.patch('/{author_id}', response_model=ResponseAuthor)

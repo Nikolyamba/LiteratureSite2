@@ -1,8 +1,7 @@
 import uuid
-from typing import Optional, List
+from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -12,17 +11,9 @@ from backend.features.rights import isAdmin
 
 from backend.features.auth import get_current_user
 from backend.models import User, Genre
+from backend.schemas.genre import GenreGeneralModel, GetGenres, EditGenre
 
 g_router = APIRouter(prefix='/genres')
-
-
-class GenreGeneralModel(BaseModel):
-    genre_name: str
-    image: Optional[str] = None
-    description: Optional[str] = None
-
-    class Config:
-        from_attributes = True
 
 
 @g_router.post('', response_model=GenreGeneralModel)
@@ -45,14 +36,6 @@ async def create_genre(data: GenreGeneralModel, current_user: User = Depends(get
     await db.refresh(new_genre)
 
     return new_genre
-
-
-class GetGenres(BaseModel):
-    genre_name: str
-    image: Optional[str] = None
-
-    class Config:
-        from_attributes = True
 
 
 @g_router.get('', response_model=List[GetGenres])
@@ -95,15 +78,6 @@ async def delete_genre(genre_id: uuid.UUID, db: AsyncSession = Depends(get_db),
     await db.commit()
 
     return {'success': True, 'msg': 'Жанр успешно удалён'}
-
-
-class EditGenre(BaseModel):
-    genre_name: Optional[str] = None
-    image: Optional[str] = None
-    description: Optional[str] = None
-
-    class Config:
-        from_attributes = True
 
 
 @g_router.patch('/{genre_id}', response_model=GenreGeneralModel)

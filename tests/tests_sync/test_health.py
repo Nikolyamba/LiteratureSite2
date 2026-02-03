@@ -1,4 +1,5 @@
-from tests.conftest import client
+from tests.tests_sync.conftest import client
+
 
 def test_healthcheck():
     response = client.get('/healthcheck')

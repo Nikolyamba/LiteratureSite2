@@ -1,8 +1,7 @@
 import uuid
-from typing import Optional, Annotated, List
+from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.concurrency import run_in_threadpool
@@ -15,14 +14,9 @@ from backend.features.hash_pass import hash_password, verify_password
 from backend.models import User
 
 from backend.redis_dir.redis_config import get_redis
+from backend.schemas.user import UserRegister, LoginSchema, GetAllUsers, UserInfo, EditUserData
 
 u_router = APIRouter(prefix='/users')
-
-
-class UserRegister(BaseModel):
-    login: str
-    password: Annotated[str, Field(min_length=8, max_length=128)]
-    email: str
 
 
 @u_router.post('')
@@ -53,11 +47,6 @@ async def register(data: UserRegister, db: AsyncSession = Depends(get_db)) -> di
     await db.refresh(new_user)
 
     return {'success': True, 'new_user': f'{new_user.login}'}
-
-
-class LoginSchema(BaseModel):
-    login: str
-    password: str
 
 
 @u_router.post('/login')
@@ -105,29 +94,12 @@ async def get_new_access_token(refresh_token: str) -> dict:
     return {"success": True, "payload": {'access_token': new_access_token, 'refresh_token': new_refresh_token}}
 
 
-class GetAllUsers(BaseModel):
-    login: str
-    image: Optional[str] = None
-
-    class Config:
-        from_attributes = True
-
-
 @u_router.get('', response_model=List[GetAllUsers])
 async def get_all_users(db: AsyncSession = Depends(get_db)):
     q = select(User)
     result = await db.execute(q)
     users = result.scalars().all()
     return users
-
-
-class UserInfo(BaseModel):
-    login: str
-    image: Optional[str] = None
-    info: Optional[str] = None
-
-    class Config:
-        from_attributes = True
 
 
 @u_router.get('/{user_id}', response_model=UserInfo)
@@ -157,15 +129,6 @@ async def del_user(user_id: uuid.UUID, db: AsyncSession = Depends(get_db),
     await db.commit()
 
     return {'status': 'deleted'}
-
-
-class EditUserData(BaseModel):
-    login: Optional[str] = None
-    image: Optional[str] = None
-    info: Optional[str] = None
-
-    class Config:
-        from_attributes = True
 
 
 # FIXME сделать пароль

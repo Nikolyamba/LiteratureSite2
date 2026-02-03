@@ -1,28 +1,17 @@
 import uuid
-from typing import Optional, List
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
 from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from backend.api.genre import GetGenres
 from backend.database.session import get_db
 from backend.features.rights import isAdmin
 from backend.features.auth import get_current_user
 from backend.models import User, Book, Genre
+from backend.schemas.book import RegisterBook, GetBooks, ResponseBook, EditBookData
 
 b_router = APIRouter(prefix='/books')
-
-
-class RegisterBook(BaseModel):
-    author_id: uuid.UUID
-    title: str
-    description: Optional[str] = None
-    image: Optional[str] = None
-    year_of_publication: Optional[int] = None
-    genre_ids: List[uuid.UUID] = []
 
 
 @b_router.post('', response_model=RegisterBook)
@@ -65,14 +54,6 @@ async def create_book(data: RegisterBook, current_user: User = Depends(get_curre
     return new_book
 
 
-class GetBooks(BaseModel):
-    title: str
-    image: Optional[str] = None
-
-    class Config:
-        from_attributes = True
-
-
 @b_router.get('', response_model=GetBooks)
 async def get_all_books(db: AsyncSession = Depends(get_db)):
     q = select(Book)
@@ -80,18 +61,6 @@ async def get_all_books(db: AsyncSession = Depends(get_db)):
     books = result.scalars().all()
 
     return books
-
-
-class ResponseBook(BaseModel):
-    author_id: uuid.UUID
-    title: str
-    description: Optional[str] = None
-    image: Optional[str] = None
-    year_of_publication: Optional[int] = None
-    genres: List[GetGenres]
-
-    class Config:
-        from_attributes = True
 
 
 @b_router.get('/{book_id}', response_model=ResponseBook)
@@ -127,18 +96,6 @@ async def del_book(book_id: uuid.UUID, db: AsyncSession = Depends(get_db),
     await db.commit()
 
     return {'success': True, 'msg': 'Книга успешно удалена'}
-
-
-class EditBookData(BaseModel):
-    author_id: Optional[uuid.UUID] = None
-    title: Optional[str] = None
-    description: Optional[str] = None
-    image: Optional[str] = None
-    year_of_publication: Optional[int] = None
-    genre_ids: Optional[List[uuid.UUID]] = None
-
-    class Config:
-        from_attributes = True
 
 
 @b_router.patch('/{book_id}', response_model=RegisterBook)
