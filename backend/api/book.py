@@ -7,7 +7,7 @@ from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.database.session import get_db
-from backend.features.admin_func import isAdmin
+from backend.features.rights import isAdmin
 from backend.features.auth import get_current_user
 from backend.models import User, Book
 

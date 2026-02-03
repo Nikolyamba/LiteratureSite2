@@ -8,7 +8,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.concurrency import run_in_threadpool
 
 from backend.database.session import get_db
-from backend.features.admin_func import can_edit_user
+from backend.features.check_pass import check_password
+from backend.features.rights import can_edit_user
 from backend.features.auth import create_access_token, create_refresh_token, get_current_user, decode_token
 from backend.features.hash_pass import hash_password, verify_password
 from backend.models import User
@@ -21,9 +22,6 @@ class UserRegister(BaseModel):
     login: str
     password: Annotated[str, Field(min_length=8, max_length=128)]
     email: str
-    role: Optional[UserRole] = UserRole.user #небезопасно, но сделано это в качестве удобства)
-    image: Optional[str] = None
-    info: Optional[str] = None
 
 @u_router.post('')
 async def register(data: UserRegister, db: AsyncSession = Depends(get_db)) -> dict:
@@ -33,7 +31,9 @@ async def register(data: UserRegister, db: AsyncSession = Depends(get_db)) -> di
     if old_user:
         raise HTTPException(status_code=409, detail='Такой логин или email уже используются на сайте')
 
-    #FIXME: сделать в будущем проверку на соответствие пароля цифрам и буковам
+    if not await check_password(data.password):
+        raise HTTPException(status_code=401, detail='Пароль должен содержать буквы и цифры')
+
     password_hash = await run_in_threadpool(
         hash_password,
         data.password
