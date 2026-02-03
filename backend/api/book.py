@@ -13,7 +13,8 @@ from backend.features.rights import isAdmin
 from backend.features.auth import get_current_user
 from backend.models import User, Book, Genre
 
-b_router = APIRouter(prefix = '/books')
+b_router = APIRouter(prefix='/books')
+
 
 class RegisterBook(BaseModel):
     author_id: uuid.UUID
@@ -23,9 +24,10 @@ class RegisterBook(BaseModel):
     year_of_publication: Optional[int] = None
     genre_ids: List[uuid.UUID] = []
 
+
 @b_router.post('', response_model=RegisterBook)
-async def new_book(data: RegisterBook, current_user: User = Depends(get_current_user),
-                   db: AsyncSession = Depends(get_db)):
+async def create_book(data: RegisterBook, current_user: User = Depends(get_current_user),
+                      db: AsyncSession = Depends(get_db)):
     if not isAdmin(current_user):
         raise HTTPException(status_code=403, detail='У вас нет прав доступа')
 
@@ -62,11 +64,14 @@ async def new_book(data: RegisterBook, current_user: User = Depends(get_current_
 
     return new_book
 
+
 class GetBooks(BaseModel):
     title: str
     image: Optional[str] = None
+
     class Config:
         from_attributes = True
+
 
 @b_router.get('', response_model=GetBooks)
 async def get_all_books(db: AsyncSession = Depends(get_db)):
@@ -76,6 +81,7 @@ async def get_all_books(db: AsyncSession = Depends(get_db)):
 
     return books
 
+
 class ResponseBook(BaseModel):
     author_id: uuid.UUID
     title: str
@@ -83,8 +89,9 @@ class ResponseBook(BaseModel):
     image: Optional[str] = None
     year_of_publication: Optional[int] = None
     genres: List[GetGenres]
+
     class Config:
-        from_attributes=True
+        from_attributes = True
 
 
 @b_router.get('/{book_id}', response_model=ResponseBook)
@@ -101,6 +108,7 @@ async def get_book(book_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=404, detail='Такая книга не найдена!')
 
     return book
+
 
 @b_router.delete('/{book_id}')
 async def del_book(book_id: uuid.UUID, db: AsyncSession = Depends(get_db),
@@ -120,6 +128,7 @@ async def del_book(book_id: uuid.UUID, db: AsyncSession = Depends(get_db),
 
     return {'success': True, 'msg': 'Книга успешно удалена'}
 
+
 class EditBookData(BaseModel):
     author_id: Optional[uuid.UUID] = None
     title: Optional[str] = None
@@ -127,12 +136,14 @@ class EditBookData(BaseModel):
     image: Optional[str] = None
     year_of_publication: Optional[int] = None
     genre_ids: Optional[List[uuid.UUID]] = None
+
     class Config:
         from_attributes = True
 
+
 @b_router.patch('/{book_id}', response_model=RegisterBook)
 async def edit_book(book_id: uuid.UUID, data: EditBookData, db: AsyncSession = Depends(get_db),
-                   current_user: User = Depends(get_current_user)):
+                    current_user: User = Depends(get_current_user)):
     q = select(Book).where(Book.id == book_id).options(selectinload(Book.genres))
     result = await db.execute(q)
     book = result.scalar_one_or_none()
@@ -169,5 +180,3 @@ async def edit_book(book_id: uuid.UUID, data: EditBookData, db: AsyncSession = D
     await db.refresh(book)
 
     return book
-
-

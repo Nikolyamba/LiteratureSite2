@@ -15,13 +15,14 @@ from backend.database.session import get_db
 from backend.models import User
 from backend.redis_dir.redis_config import get_redis
 
-#FIXME: ЧУТКА В КОНЦЕ НАДО ОТРЕФАКТОРИТЬ
+# FIXME: ЧУТКА В КОНЦЕ НАДО ОТРЕФАКТОРИТЬ
 
 load_dotenv()
 
 SECRET_KEY = os.getenv("KEY")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 15
+
 
 def create_access_token(login: str):
     expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -32,6 +33,7 @@ def create_access_token(login: str):
     }
     access_token = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
     return access_token
+
 
 async def create_refresh_token(login: str):
     jti = str(uuid.uuid4())
@@ -47,11 +49,14 @@ async def create_refresh_token(login: str):
     await r.setex(f"refresh:{jti}", timedelta(days=30), login)
     return refresh_token
 
+
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login")
+
 
 def decode_token(token: str):
     payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
     return payload
+
 
 async def get_current_user(token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)) -> User:
     credentials_exception = HTTPException(

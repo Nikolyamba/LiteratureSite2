@@ -3,6 +3,7 @@ from fastapi import FastAPI
 
 from backend.api.author import a_router
 from backend.api.book import b_router
+from backend.api.comment import c_router
 from backend.api.genre import g_router
 from backend.api.user import u_router
 from backend.redis_dir.redis_config import init_redis, close_redis
@@ -13,6 +14,7 @@ app.include_router(u_router, prefix='/api')
 app.include_router(b_router, prefix='/api')
 app.include_router(g_router, prefix='/api')
 app.include_router(a_router, prefix='/api')
+app.include_router(c_router, prefix='/api')
 
 @app.on_event('startup')
 async def startup():

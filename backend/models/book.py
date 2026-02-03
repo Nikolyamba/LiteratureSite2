@@ -6,6 +6,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from backend.database.base import Base
 
+
 class BookGenre(Base):
     __tablename__ = "book_genres"
 
@@ -17,6 +18,7 @@ class BookGenre(Base):
         ForeignKey("genres.id", ondelete="CASCADE"),
         primary_key=True
     )
+
 
 class Book(Base):
     __tablename__ = 'books'
@@ -30,4 +32,3 @@ class Book(Base):
 
     author: Mapped['Author'] = relationship(back_populates='books')
     genres: Mapped[List['Genre']] = relationship(secondary='book_genres', back_populates='books')
-

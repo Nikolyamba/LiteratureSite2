@@ -7,9 +7,11 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from backend.database.base import Base
 
+
 class UserRole(PyEnum):
     user: str = "User"
-    admin: str = "Admin" #ВРУЧНУЮ ЗАТЕМ НАДО РАСШИРЯТЬ ЭНАМ
+    admin: str = "Admin"  # ВРУЧНУЮ ЗАТЕМ НАДО РАСШИРЯТЬ ЭНАМ
+
 
 class User(Base):
     __tablename__ = "users"
@@ -29,7 +31,6 @@ class User(Base):
         server_default=UserRole.user.value,
         nullable=False
     )
-    info:  Mapped[str] = mapped_column(nullable=True)
+    info: Mapped[str] = mapped_column(nullable=True)
 
     comments: Mapped[List["Comment"]] = relationship(back_populates='user')
-

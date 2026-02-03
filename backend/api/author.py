@@ -15,6 +15,7 @@ from backend.models import User, Author
 
 a_router = APIRouter(prefix='/authors')
 
+
 class RequestAuthor(BaseModel):
     name: str
     surname: str
@@ -22,10 +23,13 @@ class RequestAuthor(BaseModel):
     birthday: Optional[datetime] = None
     about: Optional[str] = None
 
+
 class ResponseAuthor(RequestAuthor):
     id: uuid.UUID
+
     class Config:
-        from_attributes=True
+        from_attributes = True
+
 
 @a_router.post('', response_model=ResponseAuthor)
 async def create_author(data: RequestAuthor, current_user: User = Depends(get_current_user),
@@ -34,19 +38,19 @@ async def create_author(data: RequestAuthor, current_user: User = Depends(get_cu
         raise HTTPException(status_code=403, detail='Отказано в доступе')
 
     q = select(Author).where(and_(
-            Author.name == data.name,
-            Author.surname == data.surname
-        ))
+        Author.name == data.name,
+        Author.surname == data.surname
+    ))
     result = await db.execute(q)
     old_author = result.scalar_one_or_none()
     if old_author:
         raise HTTPException(status_code=401, detail='Такой автор уже есть')
 
-    new_author = Author(name = data.name,
-                        surname = data.surname,
-                        patronimyc = data.patronimyc,
-                        birthday = data.birthday,
-                        about = data.about)
+    new_author = Author(name=data.name,
+                        surname=data.surname,
+                        patronimyc=data.patronimyc,
+                        birthday=data.birthday,
+                        about=data.about)
 
     db.add(new_author)
     await db.commit()
@@ -54,12 +58,15 @@ async def create_author(data: RequestAuthor, current_user: User = Depends(get_cu
 
     return new_author
 
+
 class GetAuthors(BaseModel):
     id: uuid.UUID
     name: str
     surname: str
+
     class Config:
         from_attributes = True
+
 
 @a_router.get('', response_model=List[GetAuthors])
 async def get_all_authors(db: AsyncSession = Depends(get_db)):
@@ -69,18 +76,20 @@ async def get_all_authors(db: AsyncSession = Depends(get_db)):
 
     return authors
 
+
 @a_router.get('/{author_id}', response_model=List[GetBooks])
-async def get_author(author_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
+async def get_author(author_id: uuid.UUID, db: AsyncSession = Depends(get_db), offset=10):
     result = await db.execute(text("""
     SELECT title, image FROM books as b
     WHERE b.author_id = :author_id
     ORDER BY b.title ASC
     LIMIT 10 OFFSET :offset
-    """), {'author_id': author_id})
+    """), {'author_id': author_id, 'offset': offset})
 
     books = result.fetchall()
 
     return books
+
 
 @a_router.delete('/{author_id}')
 async def delete_author(author_id: uuid.UUID, db: AsyncSession = Depends(get_db),
@@ -99,12 +108,14 @@ async def delete_author(author_id: uuid.UUID, db: AsyncSession = Depends(get_db)
 
     return {'success': True, 'msg': f'{author_id} успешно удалён'}
 
+
 class EditAuthor(BaseModel):
     name: Optional[str] = None
     surname: Optional[str] = None
     patronimyc: Optional[str] = None
     birthday: Optional[datetime] = None
     about: Optional[str] = None
+
 
 @a_router.patch('/{author_id}', response_model=ResponseAuthor)
 async def edit_author(data: EditAuthor, author_id: uuid.UUID, db: AsyncSession = Depends(get_db),

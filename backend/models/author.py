@@ -7,6 +7,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from backend.database.base import Base
 
+
 class Author(Base):
     __tablename__ = 'authors'
 

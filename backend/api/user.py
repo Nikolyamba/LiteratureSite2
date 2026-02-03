@@ -13,15 +13,17 @@ from backend.features.rights import can_edit_user
 from backend.features.auth import create_access_token, create_refresh_token, get_current_user, decode_token
 from backend.features.hash_pass import hash_password, verify_password
 from backend.models import User
-from backend.models.user import UserRole
+
 from backend.redis_dir.redis_config import get_redis
 
 u_router = APIRouter(prefix='/users')
+
 
 class UserRegister(BaseModel):
     login: str
     password: Annotated[str, Field(min_length=8, max_length=128)]
     email: str
+
 
 @u_router.post('')
 async def register(data: UserRegister, db: AsyncSession = Depends(get_db)) -> dict:
@@ -39,12 +41,12 @@ async def register(data: UserRegister, db: AsyncSession = Depends(get_db)) -> di
         data.password
     )
 
-    new_user = User(login = data.login,
-                    hashed_password = password_hash,
-                    email = data.email,
-                    role = data.role,
-                    image = data.image,
-                    info = data.info)
+    new_user = User(login=data.login,
+                    hashed_password=password_hash,
+                    email=data.email,
+                    role=data.role,
+                    image=data.image,
+                    info=data.info)
 
     db.add(new_user)
     await db.commit()
@@ -52,9 +54,11 @@ async def register(data: UserRegister, db: AsyncSession = Depends(get_db)) -> di
 
     return {'success': True, 'new_user': f'{new_user.login}'}
 
+
 class LoginSchema(BaseModel):
     login: str
     password: str
+
 
 @u_router.post('/login')
 async def login(data: LoginSchema, db: AsyncSession = Depends(get_db)) -> dict:
@@ -70,6 +74,7 @@ async def login(data: LoginSchema, db: AsyncSession = Depends(get_db)) -> dict:
 
     return {'access_token': access_token, 'refresh_token': refresh_token}
 
+
 @u_router.post('/logout')
 async def logout(refresh_token: str, current_user: User = Depends(get_current_user)) -> dict:
     payload = decode_token(refresh_token)
@@ -78,6 +83,7 @@ async def logout(refresh_token: str, current_user: User = Depends(get_current_us
     await r.delete(f'refresh:{jti_id}')
 
     return {'success': True, 'msg': f'{current_user.login} вышел из системы'}
+
 
 @u_router.post('/refresh')
 async def get_new_access_token(refresh_token: str) -> dict:
@@ -91,18 +97,21 @@ async def get_new_access_token(refresh_token: str) -> dict:
     if not r.exists(f"refresh:{jti}"):
         raise HTTPException(status_code=401, detail="Refresh токен недействителен")
 
-    login = await r.get(f"refresh:{jti}")
+    user_login = await r.get(f"refresh:{jti}")
     await r.delete(f"refresh:{jti}")
 
-    new_access_token = create_access_token(login)
-    new_refresh_token = create_refresh_token(login)
+    new_access_token = create_access_token(user_login)
+    new_refresh_token = create_refresh_token(user_login)
     return {"success": True, "payload": {'access_token': new_access_token, 'refresh_token': new_refresh_token}}
+
 
 class GetAllUsers(BaseModel):
     login: str
     image: Optional[str] = None
+
     class Config:
         from_attributes = True
+
 
 @u_router.get('', response_model=List[GetAllUsers])
 async def get_all_users(db: AsyncSession = Depends(get_db)):
@@ -111,12 +120,15 @@ async def get_all_users(db: AsyncSession = Depends(get_db)):
     users = result.scalars().all()
     return users
 
+
 class UserInfo(BaseModel):
     login: str
     image: Optional[str] = None
     info: Optional[str] = None
+
     class Config:
         from_attributes = True
+
 
 @u_router.get('/{user_id}', response_model=UserInfo)
 async def get_user(user_id: uuid.UUID, db: AsyncSession = Depends(get_db),
@@ -126,6 +138,7 @@ async def get_user(user_id: uuid.UUID, db: AsyncSession = Depends(get_db),
     target_user = result.scalar_one_or_none()
 
     return target_user
+
 
 @u_router.delete('/{user_id}')
 async def del_user(user_id: uuid.UUID, db: AsyncSession = Depends(get_db),
@@ -145,13 +158,17 @@ async def del_user(user_id: uuid.UUID, db: AsyncSession = Depends(get_db),
 
     return {'status': 'deleted'}
 
+
 class EditUserData(BaseModel):
     login: Optional[str] = None
     image: Optional[str] = None
     info: Optional[str] = None
+
     class Config:
-        from_attributes=True
-#FIXME сделать пароль
+        from_attributes = True
+
+
+# FIXME сделать пароль
 
 @u_router.patch('/{user_id}', response_model=UserInfo)
 async def edit_user(user_id: uuid.UUID, data: EditUserData,
@@ -174,7 +191,3 @@ async def edit_user(user_id: uuid.UUID, data: EditUserData,
 
     await db.commit()
     await db.refresh(target_user)
-
-
-
-

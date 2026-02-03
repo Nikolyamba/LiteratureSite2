@@ -15,12 +15,15 @@ from backend.models import User, Genre
 
 g_router = APIRouter(prefix='/genres')
 
+
 class GenreGeneralModel(BaseModel):
     genre_name: str
     image: Optional[str] = None
     description: Optional[str] = None
+
     class Config:
         from_attributes = True
+
 
 @g_router.post('', response_model=GenreGeneralModel)
 async def create_genre(data: GenreGeneralModel, current_user: User = Depends(get_current_user),
@@ -34,18 +37,20 @@ async def create_genre(data: GenreGeneralModel, current_user: User = Depends(get
     if old_genre:
         raise HTTPException(status_code=401, detail='Такой жанр уже есть')
 
-    new_genre = Genre(genre_name = data.genre_name,
-                      image = data.image,
-                      description = data.description)
+    new_genre = Genre(genre_name=data.genre_name,
+                      image=data.image,
+                      description=data.description)
     db.add(new_genre)
     await db.commit()
     await db.refresh(new_genre)
 
     return new_genre
 
+
 class GetGenres(BaseModel):
     genre_name: str
     image: Optional[str] = None
+
     class Config:
         from_attributes = True
 
@@ -58,8 +63,9 @@ async def get_all_genres(db: AsyncSession = Depends(get_db)):
 
     return genres
 
+
 @g_router.get('/{genre_id}', response_model=List[GetBooks])
-async def get_genre_books(genre_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
+async def get_genre_books(genre_id: uuid.UUID, db: AsyncSession = Depends(get_db), offset=10):
     result = await db.execute(text("""
     SELECT title, image FROM books as b
     JOIN book_genres as bg on b.id = bg.book_id
@@ -67,7 +73,7 @@ async def get_genre_books(genre_id: uuid.UUID, db: AsyncSession = Depends(get_db
     WHERE g.id = :genre_id
     ORDER BY b.title ASC
     LIMIT 10 OFFSET :offset
-    """), {'genre_id': genre_id})
+    """), {'genre_id': genre_id, 'offset': offset})
     books = result.fetchall()
 
     return books
@@ -90,17 +96,20 @@ async def delete_genre(genre_id: uuid.UUID, db: AsyncSession = Depends(get_db),
 
     return {'success': True, 'msg': 'Жанр успешно удалён'}
 
+
 class EditGenre(BaseModel):
     genre_name: Optional[str] = None
     image: Optional[str] = None
     description: Optional[str] = None
+
     class Config:
         from_attributes = True
+
 
 @g_router.patch('/{genre_id}', response_model=GenreGeneralModel)
 async def edit_genre(data: EditGenre, genre_id: uuid.UUID,
                      db: AsyncSession = Depends(get_db),
-                       current_user: User = Depends(get_current_user)) -> dict:
+                     current_user: User = Depends(get_current_user)) -> dict:
     q = select(Genre).where(Genre.id == genre_id)
     result = await db.execute(q)
     genre = result.scalar_one_or_none()
