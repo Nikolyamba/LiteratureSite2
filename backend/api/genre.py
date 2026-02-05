@@ -49,8 +49,14 @@ async def get_all_genres(db: AsyncSession = Depends(get_db)):
 
 @g_router.get('/{genre_id}', response_model=List[GetBooks])
 async def get_genre_books(genre_id: uuid.UUID, db: AsyncSession = Depends(get_db), offset=10):
+    q = select(Genre).where(Genre.id == genre_id)
+    result = await db.execute(q)
+    genre = result.scalar_one_or_none()
+    if not genre:
+        raise HTTPException(status_code=404, detail='Такой жанр не найден')
+
     result = await db.execute(text("""
-    SELECT title, image FROM books as b
+    SELECT b.title, b.image FROM books as b
     JOIN book_genres as bg on b.id = bg.book_id
     JOIN genres as g on bg.genre_id = :genre_id
     WHERE g.id = :genre_id
