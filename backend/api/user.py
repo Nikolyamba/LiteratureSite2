@@ -19,7 +19,7 @@ from backend.schemas.user import UserRegister, LoginSchema, GetAllUsers, UserInf
 u_router = APIRouter(prefix='/users')
 
 
-@u_router.post('')
+@u_router.post('/register')
 async def register(data: UserRegister, db: AsyncSession = Depends(get_db)) -> dict:
     q = select(User).where((User.login == data.login) | (User.email == data.email))
     result = await db.execute(q)
