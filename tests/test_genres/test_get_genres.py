@@ -16,7 +16,7 @@ async def test_get_all_genres(async_client, override_db_dependency, fake_genre):
 
     assert len(response_json) == 1
 
-
+#FIXME: Доделать надо будет этот тест потом
 """ @pytest.mark.asyncio
 async def test_get_genre_books_success(async_client, override_db_dependency, fake_genre):
     genre_id = fake_genre.id
