@@ -11,7 +11,7 @@ export default function HomePage() {
         как я изменился за этот год.
       </p>  
 
-    <Link to="/literatures">
+    {/* <Link to="/literatures">
         <button>Литература</button>
     </Link>
     <Link to="/authors">
@@ -19,7 +19,7 @@ export default function HomePage() {
     </Link>
     <Link to="/genres">
         <button>Жанры</button>
-    </Link>
+    </Link> */}
     <Link to="/users">
         <button>Пользователи</button>
     </Link>
