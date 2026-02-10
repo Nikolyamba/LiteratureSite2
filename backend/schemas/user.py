@@ -35,6 +35,7 @@ class EditUserData(BaseModel):
     login: Optional[str] = None
     image: Optional[str] = None
     info: Optional[str] = None
+    password: Optional[Annotated[str, Field(min_length=8, max_length=128)]] = None
 
     class Config:
         from_attributes = True

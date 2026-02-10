@@ -1,4 +1,5 @@
 import uuid
+from fastapi.concurrency import run_in_threadpool
 import pytest
 import pytest_asyncio
 from httpx import AsyncClient, ASGITransport
@@ -7,6 +8,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, Asyn
 from backend.database.base import Base
 from backend.database.session import get_db
 from backend.features.auth import get_current_user
+from backend.features.hash_pass import hash_password
 from backend.main import app
 from backend.models import User
 from backend.models.genre import Genre
@@ -70,16 +72,19 @@ async def db_session():
 
 @pytest.fixture
 async def fake_normal_user(db_session):
+    plain_password = "1234qwer"
+    hashed = await run_in_threadpool(hash_password, plain_password)
     user = User(
         id=uuid.uuid4(),
         login='123qwe',
-        hashed_password='1234qwer',
+        hashed_password=hashed,
         email='123qwe',
         role=UserRole.user
     )
     db_session.add(user)
     await db_session.commit()
     await db_session.refresh(user)
+    user.plain_password = plain_password
     return user
 
 

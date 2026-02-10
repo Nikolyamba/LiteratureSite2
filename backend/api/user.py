@@ -31,8 +31,8 @@ async def register(data: UserRegister, db: AsyncSession = Depends(get_db)) -> di
     result = await db.execute(q)
     old_user = result.scalar_one_or_none()
     if old_user:
-        # logger.warning('Status_code = 409. Такой Login или email уже используются на сайте')
-        raise HTTPException(status_code=409, detail='Такой логин или email уже используются на сайте')
+        # logger.warning('Status_code = 401. Такой Login или email уже используются на сайте')
+        raise HTTPException(status_code=401, detail='Такой логин или email уже используются на сайте')
 
     if not await check_password(data.password):
         # logger.error('Status_code = 401. Пароль должен содержать буквы и цифры')
@@ -45,10 +45,7 @@ async def register(data: UserRegister, db: AsyncSession = Depends(get_db)) -> di
 
     new_user = User(login=data.login,
                     hashed_password=password_hash,
-                    email=data.email,
-                    role=UserRole.user,
-                    image=data.image,
-                    info=data.info)
+                    email=data.email)
 
     db.add(new_user)
     await db.commit()
@@ -140,8 +137,6 @@ async def del_user(user_id: uuid.UUID, db: AsyncSession = Depends(get_db),
     return {'status': 'deleted'}
 
 
-# FIXME сделать пароль
-
 @u_router.patch('/{user_id}', response_model=UserInfo)
 async def edit_user(user_id: uuid.UUID, data: EditUserData,
                     db: AsyncSession = Depends(get_db),
@@ -159,7 +154,15 @@ async def edit_user(user_id: uuid.UUID, data: EditUserData,
     update_data = data.model_dump(exclude_unset=True)
 
     for row, info in update_data.items():
-        setattr(target_user, row, info)
+        if row != 'password':
+            setattr(target_user, row, info)
+        else:
+            new_hash_pass = await run_in_threadpool(
+            hash_password,
+            update_data.password
+        )
+            target_user.hashed_password = new_hash_pass
+
 
     await db.commit()
     await db.refresh(target_user)
