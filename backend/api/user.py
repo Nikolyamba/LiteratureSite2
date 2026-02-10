@@ -2,6 +2,7 @@ import uuid
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
+from loguru import logger
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.concurrency import run_in_threadpool
@@ -13,21 +14,28 @@ from backend.features.auth import create_access_token, create_refresh_token, get
 from backend.features.hash_pass import hash_password, verify_password
 from backend.models import User
 
+from backend.models.user import UserRole
 from backend.redis_dir.redis_config import get_redis
 from backend.schemas.user import UserRegister, LoginSchema, GetAllUsers, UserInfo, EditUserData
 
 u_router = APIRouter(prefix='/users')
 
-
+#FIXME: Я сломал регистрацию
 @u_router.post('/register')
 async def register(data: UserRegister, db: AsyncSession = Depends(get_db)) -> dict:
+    # logger.info('Регистрация пользователя',
+    #             login = data.login,
+    #             email = data.email)
+
     q = select(User).where((User.login == data.login) | (User.email == data.email))
     result = await db.execute(q)
     old_user = result.scalar_one_or_none()
     if old_user:
+        # logger.warning('Status_code = 409. Такой Login или email уже используются на сайте')
         raise HTTPException(status_code=409, detail='Такой логин или email уже используются на сайте')
 
     if not await check_password(data.password):
+        # logger.error('Status_code = 401. Пароль должен содержать буквы и цифры')
         raise HTTPException(status_code=401, detail='Пароль должен содержать буквы и цифры')
 
     password_hash = await run_in_threadpool(
@@ -38,13 +46,14 @@ async def register(data: UserRegister, db: AsyncSession = Depends(get_db)) -> di
     new_user = User(login=data.login,
                     hashed_password=password_hash,
                     email=data.email,
-                    role=data.role,
+                    role=UserRole.user,
                     image=data.image,
                     info=data.info)
 
     db.add(new_user)
     await db.commit()
     await db.refresh(new_user)
+    # logger.info(f'Пользователь успешно зарегестрирован: {new_user.id}')
 
     return {'success': True, 'new_user': f'{new_user.login}'}
 

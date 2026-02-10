@@ -16,10 +16,10 @@ export default function HomePage() {
     </Link>
     <Link to="/authors">
         <button>Авторы</button>
-    </Link>
+    </Link> */}
     <Link to="/genres">
         <button>Жанры</button>
-    </Link> */}
+    </Link>
     <Link to="/users">
         <button>Пользователи</button>
     </Link>

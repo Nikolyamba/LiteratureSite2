@@ -6,7 +6,10 @@ from backend.api.book import b_router
 from backend.api.comment import c_router
 from backend.api.genre import g_router
 from backend.api.user import u_router
+from backend.logs_api.log import setup_logging
 from backend.redis_dir.redis_config import init_redis, close_redis
+
+# setup_logging()
 
 app = FastAPI()
 

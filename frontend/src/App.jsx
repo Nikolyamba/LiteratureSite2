@@ -4,6 +4,7 @@ import HomePage from './pages/HomePage'
 import RegisterPage from './pages/RegisterPage'
 import LoginPage from './pages/LoginPage'
 import UsersPage from './pages/UsersPage'
+import GenresPage from './pages/GenresPage'
 
 
 export default function App() {
@@ -14,6 +15,7 @@ export default function App() {
         <Route path='/register' element={<RegisterPage />}/>
         <Route path='/login' element={<LoginPage />}/>
         <Route path='/users' element={<UsersPage />}/>
+        <Route path='/genres' element={<GenresPage />}/>
       </Routes>
     </BrowserRouter>
   )
