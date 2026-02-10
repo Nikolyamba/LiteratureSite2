@@ -1,4 +1,5 @@
 import uuid
+import fakeredis
 from fastapi.concurrency import run_in_threadpool
 import pytest
 import pytest_asyncio
@@ -11,6 +12,7 @@ from backend.features.auth import get_current_user
 from backend.features.hash_pass import hash_password
 from backend.main import app
 from backend.models import User
+from backend.models.book import Book
 from backend.models.genre import Genre
 from backend.models.user import UserRole
 
@@ -69,6 +71,13 @@ async def db_session():
             await session.close()
             await trans.rollback()
 
+@pytest.fixture
+async def get_fake_redis():
+    fake_r = fakeredis.aioredis.FakeRedis(decode_responses=True)
+    try:
+        yield fake_r
+    finally:
+        fake_r.close()
 
 @pytest.fixture
 async def fake_normal_user(db_session):
@@ -102,7 +111,6 @@ async def fake_admin_user(db_session):
     await db_session.refresh(admin)
     return admin
 
-
 @pytest.fixture
 async def fake_genre(db_session):
     genre = Genre(
@@ -116,6 +124,16 @@ async def fake_genre(db_session):
     await db_session.refresh(genre)
     return genre
 
+@pytest.fixture
+async def fake_book(db_session):
+    book = Book(
+        id = uuid.uuid4(),
+        title = 'Конь',
+        description = 'Книга о коне',
+        image = None,
+        year_of_publication = None,
+        genre_ids = [fake_genre]
+    )
 
 @pytest.fixture
 async def override_current_admin(fake_admin_user):
